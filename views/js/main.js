@@ -291,7 +291,7 @@ function generator(adj, noun) {
   var nouns = getNoun(noun);
   var randomAdjective = parseInt(Math.random() * adjectives.length);
   var randomNoun = parseInt(Math.random() * nouns.length);
-  var name = "The " + adjectives[randomAdjective].capitalize() + " " + nouns[randomNoun].capitalize();
+  var name = ["The ", adjectives[randomAdjective].capitalize(), " ", nouns[randomNoun].capitalize()].join("");
   return name;
 }
 
@@ -329,33 +329,34 @@ var selectRandomCrust = function() {
 };
 
 var ingredientItemizer = function(string) {
-  return "<li>" + string + "</li>";
+  return ["<li>", string,"</li>"].join("");
 };
 
 // Returns a string with random pizza ingredients nested inside <li> tags
 var makeRandomPizza = function() {
-  var pizza = "";
+  var pizza = [""];
 
   var numberOfMeats = Math.floor((Math.random() * 4));
   var numberOfNonMeats = Math.floor((Math.random() * 3));
   var numberOfCheeses = Math.floor((Math.random() * 2));
 
   for (var i = 0; i < numberOfMeats; i++) {
-    pizza = pizza + ingredientItemizer(selectRandomMeat());
+    pizza.push(ingredientItemizer(selectRandomMeat()));
   }
 
   for (var j = 0; j < numberOfNonMeats; j++) {
-    pizza = pizza + ingredientItemizer(selectRandomNonMeat());
+    pizza.push(ingredientItemizer(selectRandomNonMeat()));
   }
 
   for (var k = 0; k < numberOfCheeses; k++) {
-    pizza = pizza + ingredientItemizer(selectRandomCheese());
+    pizza.push(ingredientItemizer(selectRandomCheese()));
   }
 
-  pizza = pizza + ingredientItemizer(selectRandomSauce());
-  pizza = pizza + ingredientItemizer(selectRandomCrust());
+  pizza.push(ingredientItemizer(selectRandomSauce()));
 
-  return pizza;
+  pizza.push(ingredientItemizer(selectRandomCrust()));
+
+  return pizza.join("");
 };
 
 // returns a DOM element for each pizza
@@ -450,10 +451,12 @@ var resizePizzas = function(size) {
 
   // Iterates through pizza elements on the page and changes their widths
   function changePizzaSizes(size) {
-    for (var i = 0; i < document.querySelectorAll(".randomPizzaContainer").length; i++) {
-      var dx = determineDx(document.querySelectorAll(".randomPizzaContainer")[i], size);
-      var newwidth = (document.querySelectorAll(".randomPizzaContainer")[i].offsetWidth + dx) + 'px';
-      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth;
+    var pizzaContainers = document.querySelectorAll(".randomPizzaContainer"),
+        i = pizzaContainers.length,
+        dx = determineDx(pizzaContainers[0], size),
+        newwidth = (pizzaContainers[0].offsetWidth + dx) + 'px';
+    while(i--) {
+      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth; 
     }
   }
 
@@ -469,8 +472,8 @@ var resizePizzas = function(size) {
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
+var pizzasDiv = document.getElementById("randomPizzas");
 for (var i = 2; i < 100; i++) {
-  var pizzasDiv = document.getElementById("randomPizzas");
   pizzasDiv.appendChild(pizzaElementGenerator(i));
 }
 
@@ -486,9 +489,10 @@ var frame = 0;
 
 // Logs the average amount of time per 10 frames needed to move the sliding background pizzas on scroll.
 function logAverageFrame(times) {   // times is the array of User Timing measurements from updatePositions()
-  var numberOfEntries = times.length;
-  var sum = 0;
-  for (var i = numberOfEntries - 1; i > numberOfEntries - 11; i--) {
+  var numberOfEntries = times.length,
+      sum = 0,
+      i;
+  for (i = numberOfEntries - 1; i > numberOfEntries - 11; i--) {
     sum = sum + times[i].duration;
   }
   console.log("Average time to generate last 10 frames: " + sum / 10 + "ms");
@@ -502,8 +506,10 @@ function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
 
-  var items = document.querySelectorAll('.mover');
-  for (var i = 0; i < items.length; i++) {
+  var items = document.querySelectorAll('.mover'),
+      i;
+
+  for (i = items.length - 1; i >= 0; i--) {
     var phase = Math.sin((document.body.scrollTop / 1250) + (i % 5));
     items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
   }
