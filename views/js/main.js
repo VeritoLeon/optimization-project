@@ -145,7 +145,7 @@ pizzaIngredients.crusts = [
 // Name generator pulled from http://saturdaykid.com/usernames/generator.html
 // Capitalizes first letter of each word
 String.prototype.capitalize = function() {
-  return this.charAt(0).toUpperCase() + this.slice(1);
+  return [this.charAt(0).toUpperCase(), this.slice(1)].join("");
 };
 
 // Pulls adjective out of array using random number sent from generator
@@ -506,12 +506,20 @@ function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
 
-  var items = document.querySelectorAll('.mover'),
-      i;
+  var cols = 8,
+      s = 256,
+      items = document.querySelectorAll('.mover'),
+      i = items.length,
+      phases = [],
+      scrollConst = document.body.scrollTop / 1250,
+      j;
 
-  for (i = items.length - 1; i >= 0; i--) {
-    var phase = Math.sin((document.body.scrollTop / 1250) + (i % 5));
-    items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
+  for (j = 0; j < 5; j++) {
+    phases.push(Math.sin(scrollConst + j));
+  }
+
+  while (i--) {
+    items[i].style.left = items[i].basicLeft + 100 * phases[i%5] + 'px'; //transform
   }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -528,18 +536,20 @@ function updatePositions() {
 window.addEventListener('scroll', updatePositions);
 
 // Generates the sliding pizzas when the page loads.
-document.addEventListener('DOMContentLoaded', function() {
-  var cols = 8;
-  var s = 256;
-  for (var i = 0; i < 200; i++) {
+document.addEventListener('DOMContentLoaded',function() {
+  var cols = 8,
+      s = 256,
+      fragment = document.createDocumentFragment();
+  for (var i = 0; i < 56; i++) {
     var elem = document.createElement('img');
     elem.className = 'mover';
-    elem.src = "images/pizza.png";
-    elem.style.height = "100px";
+    elem.src = "images/pizza-bg.png";
+    // elem.style.height = "100px";
     elem.style.width = "73.333px";
     elem.basicLeft = (i % cols) * s;
     elem.style.top = (Math.floor(i / cols) * s) + 'px';
-    document.querySelector("#movingPizzas1").appendChild(elem);
+    fragment.appendChild(elem);
   }
+  document.querySelector("#movingPizzas1").appendChild(fragment);
   updatePositions();
 });
