@@ -456,7 +456,7 @@ var resizePizzas = function(size) {
         dx = determineDx(pizzaContainers[0], size),
         newwidth = (pizzaContainers[0].offsetWidth + dx) + 'px';
     while(i--) {
-      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth; 
+      pizzaContainers[i].style.width = newwidth; 
     }
   }
 
@@ -506,20 +506,18 @@ function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
 
-  var cols = 8,
-      s = 256,
-      items = document.querySelectorAll('.mover'),
+  var items = document.querySelectorAll('.mover'),
       i = items.length,
       phases = [],
-      scrollConst = document.body.scrollTop / 1250,
-      j;
-
-  for (j = 0; j < 5; j++) {
-    phases.push(Math.sin(scrollConst + j));
-  }
+      scrollConst = document.body.scrollTop / 1250;
+  phases.push(100 * Math.sin(scrollConst));
+  phases.push(100 * Math.sin(scrollConst + 1));
+  phases.push(100 * Math.sin(scrollConst + 2));
+  phases.push(100 * Math.sin(scrollConst + 3));
+  phases.push(100 * Math.sin(scrollConst + 4));
 
   while (i--) {
-    items[i].style.left = items[i].basicLeft + 100 * phases[i%5] + 'px'; //transform
+    items[i].style.left = [items[i].basicLeft + phases[i % 5], 'px'].join(""); //transform
   }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -536,20 +534,18 @@ function updatePositions() {
 window.addEventListener('scroll', updatePositions);
 
 // Generates the sliding pizzas when the page loads.
-document.addEventListener('DOMContentLoaded',function() {
+document.addEventListener('DOMContentLoaded', window.requestAnimationFrame(function() {
   var cols = 8,
       s = 256,
-      fragment = document.createDocumentFragment();
-  for (var i = 0; i < 56; i++) {
+      fragment = document.querySelector("#movingPizzas1");
+  for (var i = 0; i < 32; i++) {
     var elem = document.createElement('img');
     elem.className = 'mover';
     elem.src = "images/pizza-bg.png";
-    // elem.style.height = "100px";
     elem.style.width = "73.333px";
     elem.basicLeft = (i % cols) * s;
     elem.style.top = (Math.floor(i / cols) * s) + 'px';
     fragment.appendChild(elem);
   }
-  document.querySelector("#movingPizzas1").appendChild(fragment);
-  updatePositions();
-});
+  window.requestAnimationFrame(updatePositions);
+}));
