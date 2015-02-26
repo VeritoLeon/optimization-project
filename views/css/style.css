@@ -31,9 +31,13 @@ form {
 
 .mover {
   position: fixed;
-  width: 256px;
+  width: 73.333px;
+  height: 100px;
   z-index: -1;
-  transform: translate3d(0, 0, 0);
+  left: 0px;
+  /*Added this property so that we don't repaint everything, just to move the pizzas.
+  This will move them to their own layer and repaint that layer.*/
+  backface-visibility: hidden;
 }
 
 .randomPizzaContainer {
