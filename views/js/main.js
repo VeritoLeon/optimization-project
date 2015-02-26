@@ -145,6 +145,11 @@ pizzaIngredients.crusts = [
 // Name generator pulled from http://saturdaykid.com/usernames/generator.html
 // Capitalizes first letter of each word
 String.prototype.capitalize = function() {
+  /* Optimized concatenation with join("") as suggested in "Working with strings" (https://developers.google.com/speed/articles/optimizing-javascript).
+  *  
+  *  If I were to follow the "code, measure, optimize" rule, I would discard these changes because the optimization is not perceptible
+  *  in this case and it gives up some readability. The reason I left it was that I really wanted to try it out as practice.
+  * */
   return [this.charAt(0).toUpperCase(), this.slice(1)].join("");
 };
 
@@ -329,10 +334,12 @@ var selectRandomCrust = function() {
 };
 
 var ingredientItemizer = function(string) {
+  // Optimized concatenation with join("") as suggested in "Working with strings" (https://developers.google.com/speed/articles/optimizing-javascript).
   return ["<li>", string,"</li>"].join("");
 };
 
 // Returns a string with random pizza ingredients nested inside <li> tags
+// Optimized concatenation to 'var pizza' with join("") as suggested in "Working with strings" (https://developers.google.com/speed/articles/optimizing-javascript).
 var makeRandomPizza = function() {
   var pizza = [""];
 
@@ -450,12 +457,16 @@ var resizePizzas = function(size) {
   }
 
   // Iterates through pizza elements on the page and changes their widths
+  // Here, I took the values that didn't NEED to be updated each iteration out of the loop.
+  // I exchanged the for loop to a decremental while loop.
+  // Both this loop and the decremental for loop had similar performance. Decided to keep this one as it is simpler to read to me.
   function changePizzaSizes(size) {
     var pizzaContainers = document.querySelectorAll(".randomPizzaContainer"),
         i = pizzaContainers.length,
         dx = determineDx(pizzaContainers[0], size),
         newwidth = (pizzaContainers[0].offsetWidth + dx) + 'px';
     while(i--) {
+      //I put the querySelector out of the loop and pointed it to pizzaContainers, because otherwise it'd query the DOM for each iteration.
       pizzaContainers[i].style.width = newwidth; 
     }
   }
@@ -472,6 +483,7 @@ var resizePizzas = function(size) {
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
+// Here I took pizzasDiv out of the look, because it didn't need to be updated for each iteration
 var pizzasDiv = document.getElementById("randomPizzas");
 for (var i = 2; i < 100; i++) {
   pizzasDiv.appendChild(pizzaElementGenerator(i));
@@ -502,22 +514,34 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
 
 // Moves the sliding background pizzas based on scroll position
+// 
 function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
 
-  var items = document.querySelectorAll('.mover'),
+  // Now I am changed the DOM request to getElementsByClassName
+  var items = document.getElementsByClassName('mover'),
       i = items.length,
       phases = [],
+      // document.body.scrollTop will return the same value each iteration, so we just need to calculate once.
       scrollConst = document.body.scrollTop / 1250;
+  // Because 'var phase' inside the loop did 4 calculations/iteration, decided to
+  // calculate everything outside of the loop and replace 'var phase' for an item of phases[]
+  // Now, outside of the loop we make these calculations once.
+  // In the loop, we just make one calculation/iteration (i%5) to get the right item of phases[].
   phases.push(100 * Math.sin(scrollConst));
   phases.push(100 * Math.sin(scrollConst + 1));
   phases.push(100 * Math.sin(scrollConst + 2));
   phases.push(100 * Math.sin(scrollConst + 3));
   phases.push(100 * Math.sin(scrollConst + 4));
 
+  // Decremental while loop for the same reasons as in 'changePizzaSizes(size)'
   while (i--) {
-    items[i].style.left = [items[i].basicLeft + phases[i % 5], 'px'].join(""); //transform
+    // Changed 'style.left' to 'style.transform' to apply translate3d and force the GPU to handle the position change of the pizzas.
+    // Got info from:
+    //  * http://blog.teamtreehouse.com/increase-your-sites-performance-with-hardware-accelerated-css
+    //  * http://www.paulirish.com/2012/why-moving-elements-with-translate-is-better-than-posabs-topleft/
+    items[i].style.transform  = 'translate3d(' +(items[i].basicLeft + phases[i % 5]) + 'px, 0, 0)';
   }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -534,6 +558,9 @@ function updatePositions() {
 window.addEventListener('scroll', updatePositions);
 
 // Generates the sliding pizzas when the page loads.
+// Calling the following function with requestAnimationFrame (http://css-tricks.com/using-requestanimationframe/),
+// to keep the whole adding background pizzas business smooth and under 60FPS
+// 
 document.addEventListener('DOMContentLoaded', window.requestAnimationFrame(function() {
   var cols = 8,
       s = 256,
@@ -541,11 +568,11 @@ document.addEventListener('DOMContentLoaded', window.requestAnimationFrame(funct
   for (var i = 0; i < 32; i++) {
     var elem = document.createElement('img');
     elem.className = 'mover';
-    elem.src = "images/pizza-bg.png";
-    elem.style.width = "73.333px";
+    elem.src = "images/pizza-bg.png"; //now the pizzas in the background are linked to a file with a smaller natural size.
     elem.basicLeft = (i % cols) * s;
     elem.style.top = (Math.floor(i / cols) * s) + 'px';
     fragment.appendChild(elem);
   }
+  // Since this is the critical function where smoothness matters, I am using requestAnimationFrame in its call as well
   window.requestAnimationFrame(updatePositions);
 }));
